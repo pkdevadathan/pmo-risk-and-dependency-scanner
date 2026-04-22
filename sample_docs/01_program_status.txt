@@ -1,0 +1,16 @@
+Program Alpha — Integrated Status (internal)
+Week of Apr 14
+
+Summary
+Clinical packaging is on track for Q3 site readiness. Data management expects DB lock H2 pending CRO
+deliverable quality review. Regulatory is aligning IND amendment scope with latest CMC batch records.
+
+Risks / issues
+- Vendor lead time for comparator sourcing extended by 4 weeks; mitigation in progress with Procurement.
+- One stability study readout TBD — team chasing lab for date confirmation.
+
+Dependencies
+- PK analysis depends on final bioanalytical report from CRO; bioanalytical currently flagged yellow in RAID.
+
+Next milestones
+- IND amendment target submission window discussed as "late Q3" — exact date TBC after alignment workshop.

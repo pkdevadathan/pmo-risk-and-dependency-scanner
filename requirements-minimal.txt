@@ -1,0 +1,2 @@
+# Offline scan + JSON validation only (no LLM API calls)
+pydantic>=2.0.0

@@ -1,0 +1,10 @@
+MEMO: Drug Substance Release to DP (confidential draft)
+
+From: MSAT
+To: Program Management, Quality, DP Supply
+
+We can only release DS lots to DP once the updated specification packet is approved. QA sign-off
+is prerequisite for the tech transfer batch. If QA review slips past the May gate, DP campaign
+start moves in parallel and threatens the H1 stability commitment discussed with Regulatory.
+
+Note: Third-party logistics partner SLA does not cover temperature excursions during holiday weeks.
