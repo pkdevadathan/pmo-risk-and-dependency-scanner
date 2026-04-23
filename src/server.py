@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,11 +33,12 @@ class ScanBody(BaseModel):
 
 
 @app.get("/", response_model=None)
-async def serve_ui() -> FileResponse | JSONResponse:
+async def serve_ui() -> FileResponse | RedirectResponse:
+    """Serve UI from disk when present (e.g. vercel dev); on production, static lives on the CDN — redirect."""
     index = ROOT / "public" / "index.html"
-    if not index.is_file():
-        return JSONResponse({"ok": True, "docs": "/docs", "health": "/api/health"})
-    return FileResponse(index, media_type="text/html; charset=utf-8")
+    if index.is_file():
+        return FileResponse(index, media_type="text/html; charset=utf-8")
+    return RedirectResponse("/index.html", status_code=307)
 
 
 @app.get("/api/health")
