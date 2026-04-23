@@ -32,7 +32,7 @@ class ScanBody(BaseModel):
     model: str = Field(default="gpt-4o-mini")
 
 
-@app.get("/")
+@app.get("/", response_model=None)
 async def serve_ui() -> FileResponse | JSONResponse:
     index = ROOT / "public" / "index.html"
     if not index.is_file():
