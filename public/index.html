@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PMO Risk & Dependency Scanner</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #9aa8bc;
+      --accent: #3b82f6;
+      --ok: #22c55e;
+      --err: #ef4444;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7f9;
+        --panel: #fff;
+        --border: #d8dee8;
+        --text: #111827;
+        --muted: #4b5563;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1rem 1.5rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (max-width: 880px) {
+      main { grid-template-columns: 1fr; }
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    section h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 0.25rem; }
+    select, textarea, input[type="file"] {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+    }
+    textarea { min-height: 140px; resize: vertical; }
+    .row { display: flex; align-items: center; gap: 0.5rem; margin: 0.6rem 0; }
+    button.primary {
+      margin-top: 0.75rem;
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.ghost {
+      margin-top: 0.75rem;
+      margin-left: 0.5rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .badge.live { background: rgba(34, 197, 94, 0.15); color: var(--ok); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    .err { color: var(--err); font-size: 0.9rem; white-space: pre-wrap; }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .card h3 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .card small { color: var(--muted); }
+    pre.snip {
+      margin: 0.35rem 0 0;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      background: var(--bg);
+      font-size: 0.8rem;
+      overflow: auto;
+      border: 1px solid var(--border);
+    }
+    ul.pm { margin: 0.25rem 0 0; padding-left: 1.1rem; }
+    #out { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PMO Risk & Dependency Scanner</h1>
+    <p>Upload project docs or use samples. Output uses a fixed taxonomy — PMs review, not blindly trust.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Inputs</h2>
+      <label for="model">OpenAI model (live mode only)</label>
+      <select id="model">
+        <option>gpt-4o-mini</option>
+        <option>gpt-4o</option>
+      </select>
+      <div class="row">
+        <input type="checkbox" id="useSamples" checked />
+        <label for="useSamples" style="margin:0">Load built-in sample bundle</label>
+      </div>
+      <label for="files">Upload text documents (.txt) — optional</label>
+      <input type="file" id="files" multiple accept=".txt,text/plain" />
+      <label for="extra">Paste status notes, email thread, or charter excerpt</label>
+      <textarea id="extra" placeholder="Optional pasted text…"></textarea>
+      <button class="primary" id="run" type="button">Run scan</button>
+      <span class="muted" id="hint"></span>
+    </section>
+    <section>
+      <h2>Analyze</h2>
+      <p class="muted">Builds a document bundle from samples, uploads, and pasted text, then runs the same pipeline as the Streamlit app.</p>
+      <p class="muted">Set <code>OPENAI_API_KEY</code> in Vercel project settings for live LLM mode.</p>
+    </section>
+    <section id="out" style="display:none">
+      <h2>Results</h2>
+      <div id="badge"></div>
+      <h2 style="margin-top:0.5rem">Executive summary</h2>
+      <p id="summary"></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">
+        <div>
+          <h2 id="risksTitle">Risks</h2>
+          <div id="risks"></div>
+        </div>
+        <div>
+          <h2 id="depsTitle">Dependencies</h2>
+          <div id="deps"></div>
+        </div>
+      </div>
+      <h2>Open questions for PM</h2>
+      <ul class="pm" id="questions"></ul>
+      <button class="ghost" type="button" id="dl">Download JSON</button>
+    </section>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let lastPayload = null;
+
+    async function buildBundle() {
+      const parts = [];
+      if ($("useSamples").checked) {
+        const r = await fetch("/api/samples");
+        if (!r.ok) throw new Error("Could not load samples");
+        const data = await r.json();
+        for (const f of data.files || []) {
+          parts.push("### FILE: " + f.name + "\n" + f.content);
+        }
+      }
+      const files = $("files").files;
+      for (const f of files) {
+        const text = await f.text();
+        parts.push("### FILE: " + f.name + "\n" + text);
+      }
+      const extra = $("extra").value.trim();
+      if (extra) parts.push("### PASTED TEXT\n" + extra);
+      return parts.join("\n\n").trim();
+    }
+
+    function esc(s) {
+      return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function renderRisk(r, i) {
+      const sn = r.source_snippet ? `<pre class="snip">${esc(r.source_snippet)}</pre>` : "";
+      return `<div class="card"><h3>${i}. ${esc(r.title)} — ${esc(r.impact)} impact</h3>
+        <small>Category: ${esc(r.category)} · Likelihood: ${esc(r.likelihood)}</small>
+        <p>${esc(r.description)}</p>${sn}
+        ${r.suggested_owner_role ? `<p><small>Suggested owner:</small> ${esc(r.suggested_owner_role)}</p>` : ""}
+        ${r.mitigation_hint ? `<p><small>Mitigation:</small> ${esc(r.mitigation_hint)}</p>` : ""}
+      </div>`;
+    }
+
+    function renderDep(d, i) {
+      return `<div class="card"><h3>${i}. ${esc(d.predecessor)} → ${esc(d.successor)}</h3>
+        <p>${esc(d.description)}</p>
+        ${d.if_slipped_impact ? `<p><small>If predecessor slips:</small> ${esc(d.if_slipped_impact)}</p>` : ""}
+      </div>`;
+    }
+
+    $("run").addEventListener("click", async () => {
+      $("hint").textContent = "";
+      $("out").style.display = "none";
+      $("run").disabled = true;
+      try {
+        const bundle = await buildBundle();
+        if (!bundle) {
+          $("hint").textContent = "Add samples, uploads, or pasted text to run a scan.";
+          return;
+        }
+        const r = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bundle, model: $("model").value }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          $("hint").innerHTML = `<span class="err">${esc(data.detail || JSON.stringify(data) || r.statusText)}</span>`;
+          return;
+        }
+        lastPayload = data;
+        const res = data.result;
+        const live = data.mode === "live_llm";
+        $("badge").innerHTML = `<span class="badge ${live ? "live" : ""}">Mode: ${live ? "Live LLM" : "Offline demo (no API key)"}</span>`;
+        $("summary").textContent = res.executive_summary || "";
+        $("risksTitle").textContent = "Risks (" + (res.risks || []).length + ")";
+        $("depsTitle").textContent = "Dependencies (" + (res.dependencies || []).length + ")";
+        $("risks").innerHTML = (res.risks || []).map(renderRisk).join("") || '<p class="muted">None</p>';
+        $("deps").innerHTML = (res.dependencies || []).map(renderDep).join("") || '<p class="muted">No explicit dependency chains extracted.</p>';
+        const qs = res.open_questions_for_pm || [];
+        $("questions").innerHTML = qs.length ? qs.map((q) => "<li>" + esc(q) + "</li>").join("") : '<li class="muted">None flagged.</li>';
+        $("out").style.display = "block";
+      } catch (e) {
+        $("hint").innerHTML = `<span class="err">${esc(String(e))}</span>`;
+      } finally {
+        $("run").disabled = false;
+      }
+    });
+
+    $("dl").addEventListener("click", () => {
+      if (!lastPayload) return;
+      const blob = new Blob([JSON.stringify(lastPayload.result, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "pmo_risk_scan.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
+</body>
+</html>

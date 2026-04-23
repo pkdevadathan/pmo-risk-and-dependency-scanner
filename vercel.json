@@ -1,0 +1,4 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pip install 'fastapi>=0.115.0' 'openai>=1.40.0' 'pydantic>=2.0.0'"
+}
